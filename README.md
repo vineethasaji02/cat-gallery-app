@@ -1,97 +1,115 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Cat Gallery — Waracle Frontend Challenge
 
-# Getting Started
+A React Native app (React Native CLI, JavaScript) built against [The Cat API](https://thecatapi.com).
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## AI Disclosure
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+Claude (Anthropic) was used as a development assistant during this project — helping with boilerplate, component structure, and speeding through repetitive code. All architectural decisions, design choices, and logic were directed and reviewed by me. Where Claude got things wrong, I fixed them.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+---
 
-```sh
-# Using npm
-npm start
+## What it does
 
-# OR using Yarn
-yarn start
+A clean, dark-themed gallery app for your cat photos. You can upload images straight from your phone's camera or library, favourite the ones you love, vote them up or down, and delete the ones that didn't make the cut.
+
+- **Gallery** — responsive grid of your uploaded cats, scales neatly from wide screens down to 340px
+- **Upload** — pick from your library or take a photo directly; large images are automatically compressed to fit the API's 2 MB limit
+- **Favouriting** — tap the heart to save a favourite; tap again to remove it
+- **Voting** — vote cats up or down; score can't drop below zero
+- **Deleting** — remove a cat permanently with a confirmation prompt
+- **Score** — displayed per cat as `(upvotes − downvotes)`
+
+---
+
+## Getting started
+
+### 1. Install dependencies
+
+```bash
+npm install
+npm install @react-navigation/native @react-navigation/native-stack
+npm install react-native-screens react-native-safe-area-context
+npm install react-native-image-picker
+npm install react-native-image-resizer
+npm install axios
 ```
 
-## Step 2: Build and run your app
+For iOS, run pod install after:
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+```bash
+cd ios && pod install && cd ..
 ```
 
-### iOS
+### 2. Add your API key
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+Open `src/services/catApi.js` and replace:
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+```js
+const API_KEY = 'YOUR_API_KEY_HERE';
 ```
 
-Then, and every time you update your native dependencies, run:
+Get a free key at [thecatapi.com](https://thecatapi.com).
 
-```sh
-bundle exec pod install
+### 3. Run
+
+```bash
+# iOS
+npx react-native run-ios
+
+# Android
+npx react-native run-android
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+If you hit a Metro cache issue:
 
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+```bash
+npx react-native start --reset-cache
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## Project structure
 
-## Step 3: Modify your app
+```
+src/
+  services/
+    catApi.js        — All API calls (images, favourites, votes, delete)
+  hooks/
+    useGallery.js    — Data fetching + state management
+  screens/
+    GalleryScreen.js — Main gallery "/"
+    UploadScreen.js  — Upload screen "/upload"
+  components/
+    CatCard.js       — Individual cat tile
+  utils/
+    theme.js         — Colours, spacing, typography
+App.js               — Navigation root
+```
 
-Now that you have successfully run the app, let's make changes!
+---
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## How it's built
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+**Service layer** (`catApi.js`) is pure async functions with no React in it — easy to test and easy to swap the HTTP client if needed.
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+**`useGallery` hook** is the single source of truth for all gallery state. It fetches images, favourites, and votes in parallel, then merges them so components just receive ready-to-render data — no joining or transforming in the UI.
 
-## Congratulations! :tada:
+**Optimistic updates** on votes mean the score changes instantly and reverts silently if the API call fails. Favourites wait for the API response before updating because you need the `favourite_id` back to be able to delete it later.
 
-You've successfully run and modified your React Native App. :partying_face:
+**Deleting** removes the card from local state immediately after the API confirms — no full reload needed, so the rest of the list stays put.
 
-### Now what?
+**Auto-compression** on upload — if a selected image is over 2 MB, it's compressed automatically (stepping through 80% → 60% → 40% quality) before the upload is attempted. The user sees a "Compressing…" state and a notice showing how much it was reduced.
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+**`CatCard`** is `memo()`-wrapped so only the cards that actually changed re-render, not the whole list.
 
-# Troubleshooting
+---
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+## What I'd add with more time
 
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- Pagination / infinite scroll on the gallery
+- Skeleton loaders instead of a spinner while loading
+- Haptic feedback on vote and favourite actions
+- Swipe-to-delete as an alternative to the delete button
+- Unit tests for the `useGallery` hook logic
